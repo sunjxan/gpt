@@ -36,8 +36,8 @@ class ScaledDotProductAttention(nn.Module):
 
         # 应用掩码（如果需要）
         if mask is not None:
-            # 将mask中为False的位置替换为极小的值（softmax后趋近于0）
-            scores = scores.masked_fill(mask == 0, -1e9)  
+            # 将mask中为False的位置替换为负无穷大（softmax后趋近于0）
+            scores = scores.masked_fill(mask == 0, float('-inf'))  
             # mask需要能广播到scores的形状
             # src attention，mask形状(1, S)，广播后(S, S)，右侧为False，用于重新编码时忽略pad
             # tgt attention，mask形状(T, T)，右侧和右上方为False，用于重新编码时忽略pad和该词后面的词
@@ -72,31 +72,29 @@ class MultiHeadAttention(nn.Module):
         self.d_k = d_model // num_heads  # 每个头的维度
         
         # 线性变换矩阵（无偏置）
-        self.W_q = nn.Linear(d_model, d_model, bias=False)  # (d_model, d_model)
-        self.W_k = nn.Linear(d_model, d_model, bias=False)  # (d_model, d_model)
-        self.W_v = nn.Linear(d_model, d_model, bias=False)  # (d_model, d_model)
+        self.W_qkv = nn.Linear(d_model, 3 * d_model, bias=False)  # (d_model, 3*d_model) 合并QKV投影
         self.W_o = nn.Linear(d_model, d_model, bias=False)  # (d_model, d_model)
         
         self.attn = ScaledDotProductAttention(dropout)
         
-    def forward(self, Q, K, V, mask=None):
+    def forward(self, x, mask=None):
         """
         前向传播
         Args:
-            q: 查询向量 (batch_size, seq_len_q, d_model)
-            k: 键向量 (batch_size, seq_len_kv, d_model)
-            v: 值向量 (batch_size, seq_len_kv, d_model)
-            mask: 掩码 (batch_size, seq_len_q, seq_len_kv)
+            x: QKV向量 (batch_size, seq_len, d_model)
+            mask: 掩码 (batch_size, seq_len, seq_len)
         Returns:
-            输出: (batch_size, seq_len_q, d_model)
-            注意力权重: (batch_size, num_heads, seq_len_q, seq_len_kv)
-        """
-        batch_size = Q.size(0)
+            输出: (batch_size, seq_len, d_model)
+            注意力权重: (batch_size, num_heads, seq_len, seq_len)
+        """    
+        batch_size = x.size(0)
         
         # 线性变换 + 分割多头
-        Q = self.W_q(Q).view(batch_size, -1, self.num_heads, self.d_k)  # (batch_size, num_heads, seq_len_q, d_k)
-        K = self.W_k(K).view(batch_size, -1, self.num_heads, self.d_k)  # (batch_size, num_heads, seq_len_kv, d_k)
-        V = self.W_v(V).view(batch_size, -1, self.num_heads, self.d_k)  # (batch_size, num_heads, seq_len_kv, d_k)
+        QKV = self.W_qkv(x)  # (batch_size, seq_len, 3*d_model)
+        Q, K, V = QKV.chunk(3, dim=-1)  # 各(batch_size, seq_len, d_model)
+        Q = Q.view(batch_size, -1, self.num_heads, self.d_k)  # (batch_size, num_heads, seq_len, d_k)
+        K = K.view(batch_size, -1, self.num_heads, self.d_k)  # (batch_size, num_heads, seq_len, d_k)
+        V = V.view(batch_size, -1, self.num_heads, self.d_k)  # (batch_size, num_heads, seq_len, d_k)
 
         # 转置维度以便矩阵计算 (batch_size, num_heads, seq_len, d_k)
         Q = Q.transpose(1, 2).contiguous()
@@ -105,15 +103,15 @@ class MultiHeadAttention(nn.Module):
         
         # 应用掩码（如果存在）
         if mask is not None:
-            # 扩展掩码维度以匹配多头 (batch_size, 1, seq_len_q, seq_len_kv) -> 广播到num_heads
+            # 扩展掩码维度以匹配多头 (batch_size, 1, seq_len, seq_len) -> 广播到num_heads
             mask = mask.unsqueeze(1)
 
         output, attn_weights = self.attn(Q, K, V, mask)
         
-        # 转置回维度 (batch_size, seq_len_q, num_heads, d_k)
+        # 转置回维度 (batch_size, seq_len, num_heads, d_k)
         output = output.transpose(1, 2).contiguous()
         
-        # 拼接所有头 (batch_size, seq_len_q, d_model)
+        # 拼接所有头 (batch_size, seq_len, d_model)
         output = output.view(batch_size, -1, self.d_model)
         
         # 最终线性变换
