@@ -101,7 +101,7 @@ class Transformer(nn.Module):
         1个多头注意力（相当于4个线性层，无偏置项）：4 × (d_model × d_model)
         前馈网络（2个线性层）：2 × d_model × d_ff + d_ff
         2个归一化层：2 × (d_model + d_model)
-    最终归一化层（norm_first=True时）：d_model + d_model
+    最终归一化层：d_model + d_model
     总参数量：
         num_decoder_layers × [4d² + 2d·d_ff + d_ff + 4d] + 2d
 
@@ -109,7 +109,4 @@ class Transformer(nn.Module):
     weight共享嵌入层权重，无bias
 '''
 def count_parameters(model):
-    for n, p in model.named_parameters():
-        if p.requires_grad:
-            print(n, p.numel())
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
