@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class SublayerConnection(nn.Module):
     """
-    残差连接与层归一化（对应Transformer中的Add & Norm操作）
+    残差连接与层归一化（对应GPT中的Add & Norm操作）
     Pre-LN 结构：x -> LayerNorm -> Sublayer -> Dropout -> Add
     输入输出形状保持不变：(batch_size, seq_len, d_model)
     """

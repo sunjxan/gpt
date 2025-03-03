@@ -4,10 +4,10 @@ import torch.nn as nn
 
 from Decoder import Decoder
 
-class Transformer(nn.Module):
+class GPT(nn.Module):
     def __init__(self, vocab_size, d_model=768, num_heads=12, num_layers=12, d_ff=3072, max_seq_len=512, dropout=0.1):
         """
-        Transformer 模型
+        GPT 模型
         Args:
             vocab_size (int): 词表大小
             d_model (int): 模型维度（输入/输出维度）
@@ -48,7 +48,7 @@ class Transformer(nn.Module):
 
         # 2. 位置编码
         seq_len = input_ids.size(-1)
-        position = torch.arange(0, seq_len).unsqueeze(1)
+        position = torch.arange(0, seq_len)
         memory = emb + self.positional_encoding(position)  # (batch_size, seq_len, d_model)
 
         # 3. 解码器处理
@@ -85,7 +85,7 @@ class Transformer(nn.Module):
     @staticmethod
     def generate_mask(seq, pad_idx=0):
         '''结合填充掩码和因果掩码得到目标序列掩码'''
-        return Transformer.generate_padding_mask(seq, pad_idx) & Transformer.generate_causal_mask(seq.size(-1)).to(seq.device)   # (batch_size, seq_len, seq_len)
+        return GPT.generate_padding_mask(seq, pad_idx) & GPT.generate_causal_mask(seq.size(-1)).to(seq.device)   # (batch_size, seq_len, seq_len)
 
 '''
     计算模型参数量

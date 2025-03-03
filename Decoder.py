@@ -8,7 +8,7 @@ from SublayerConnection import SublayerConnection
 class DecoderLayer(nn.Module):
     def __init__(self, d_model, num_heads, d_ff, dropout=0.1):
         """
-        Transformer的单个解码器层。
+        GPT的单个解码器层。
         
         Args:
             d_model (int): 输入的特征维度（即词嵌入的维度）。
@@ -41,7 +41,7 @@ class DecoderLayer(nn.Module):
         """
         # ----------------- 步骤1：带掩码的自注意力 -----------------
         # 输入x的shape: (batch_size, seq_len, d_model)
-        x = self.sublayer1(x, lambda x: self.self_attn(x, x, x, mask))
+        x = self.sublayer1(x, lambda x: self.self_attn(x, mask))
         
         # ----------------- 步骤3：前馈网络 -----------------
         x = self.sublayer2(x, self.ffn)
@@ -51,7 +51,7 @@ class DecoderLayer(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, num_layers, d_model, num_heads, d_ff, dropout=0.1):
         """
-        Transformer Decoder 模块
+        GPT Decoder 模块
         Args:
             num_layers (int): 解码器层数。
             d_model (int): 输入的特征维度。
