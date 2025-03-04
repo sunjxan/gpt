@@ -133,26 +133,26 @@ class Trainer:
         total_loss = 0.0
         start_time = time.time()
         
-        with torch.no_grad():
-            for input_ids in self.val_loader:
-                input_ids = input_ids.to(self.device)
+        for input_ids in self.val_loader:
+            input_ids = input_ids.to(self.device)
 
-                # 生成掩码
-                mask = model.generate_mask(input_ids, self.config['pad_idx'])
+            # 生成掩码
+            mask = model.generate_mask(input_ids, self.config['pad_idx'])
 
-                # 前向传播
+            # 前向传播
+            with torch.no_grad():
                 output = model(
                     input_ids=input_ids[:, :-1],  # 解码器输入去尾
                     mask=mask[:, :-1, :-1]
                 )
                 
-                # 计算损失
-                loss = self.criterion(
-                    output.contiguous().view(-1, output.size(-1)),
-                    input_ids[:, 1:].contiguous().view(-1)  # 目标去头
-                )
+            # 计算损失
+            loss = self.criterion(
+                output.contiguous().view(-1, output.size(-1)),
+                input_ids[:, 1:].contiguous().view(-1)  # 目标去头
+            )
 
-                total_loss += loss.item()
+            total_loss += loss.item()
         
         avg_loss = total_loss / len(self.val_loader)
         epoch_time = time.time() - start_time
