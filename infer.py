@@ -13,7 +13,9 @@ def process_data(sentence, tokenizer, vocab, max_len=512, device='cpu'):
 def get_probs(model, input_ids, vocab, temperature=1.0):
     """获取下一个token的概率分布"""
     mask = model.generate_mask(input_ids, vocab['<pad>'])
-    output = model(input_ids, mask)[:, -1] / temperature
+    with torch.no_grad():
+        output = model(input_ids, mask)
+    output = output[:, -1] / temperature
     return torch.log_softmax(output, dim=-1)
 
 def greedy_decode(model, sentence, tokenizer, vocab, max_len=50, device='cpu'):
@@ -22,13 +24,12 @@ def greedy_decode(model, sentence, tokenizer, vocab, max_len=50, device='cpu'):
     input_ids = process_data(sentence, tokenizer, vocab, device=device)
     end_token = vocab['<eos>']
 
-    with torch.no_grad():
-        for _ in range(max_len - 1):
-            probs = get_probs(model, input_ids, vocab)
-            next_token = torch.argmax(probs, dim=-1, keepdim=True)
-            input_ids = torch.cat([input_ids, next_token], dim=-1)
-            if next_token.item() == end_token:
-                break
+    for _ in range(max_len - 1):
+        probs = get_probs(model, input_ids, vocab)
+        next_token = torch.argmax(probs, dim=-1, keepdim=True)
+        input_ids = torch.cat([input_ids, next_token], dim=-1)
+        if next_token.item() == end_token:
+            break
 
     return input_ids[0].cpu().tolist()
 
@@ -48,42 +49,41 @@ def beam_search_decode(model, sentence, tokenizer, vocab,
     # 存储完整序列
     completed = []
     
-    with torch.no_grad():
-        for _ in range(max_len - 1):
-            candidates = []
-            
-            # 遍历当前所有候选
-            for seq, score in beam:
-                # 如果序列已结束，直接保留
-                if seq[0, -1].item() == end_token:
-                    candidates.append( (seq, score) )
-                    continue
-                    
-                # 获取下一个token的概率分布
-                probs = get_probs(model, input_ids, vocab)
-                top_probs, top_indices = torch.topk(probs, beam_width, dim=-1)
+    for _ in range(max_len - 1):
+        candidates = []
+        
+        # 遍历当前所有候选
+        for seq, score in beam:
+            # 如果序列已结束，直接保留
+            if seq[0, -1].item() == end_token:
+                candidates.append( (seq, score) )
+                continue
                 
-                for i in range(beam_width):
-                    token = top_indices[0, i].unsqueeze(0).unsqueeze(0)
-                    new_seq = torch.cat([seq, token], dim=-1)
-                    new_score = score + top_probs[0, i].item()
-                    candidates.append( (new_seq, new_score) )
+            # 获取下一个token的概率分布
+            probs = get_probs(model, input_ids, vocab)
+            top_probs, top_indices = torch.topk(probs, beam_width, dim=-1)
             
-            # 按分数排序，保留top beam_width个
-            candidates.sort(key=lambda x: x[1], reverse=True)
-            candidates = candidates[:beam_width]
-            
-            # 分离已完成的序列
-            new_beam = []
-            for seq, score in candidates:
-                if seq[0, -1].item() == end_token:
-                    completed.append( (seq[0].cpu().tolist(), normalize_scores(seq, score, len_penalty)) )  # 长度归一化
-                else:
-                    new_beam.append( (seq, score) )
-            beam = new_beam
-            
-            if not beam:
-                break  # 所有候选均已完成
+            for i in range(beam_width):
+                token = top_indices[0, i].unsqueeze(0).unsqueeze(0)
+                new_seq = torch.cat([seq, token], dim=-1)
+                new_score = score + top_probs[0, i].item()
+                candidates.append( (new_seq, new_score) )
+        
+        # 按分数排序，保留top beam_width个
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        candidates = candidates[:beam_width]
+        
+        # 分离已完成的序列
+        new_beam = []
+        for seq, score in candidates:
+            if seq[0, -1].item() == end_token:
+                completed.append( (seq[0].cpu().tolist(), normalize_scores(seq, score, len_penalty)) )  # 长度归一化
+            else:
+                new_beam.append( (seq, score) )
+        beam = new_beam
+        
+        if not beam:
+            break  # 所有候选均已完成
             
     # 合并未完成的序列
     completed += [ (seq[0].cpu().tolist(), normalize_scores(seq, score, len_penalty)) for seq, score in beam ]
