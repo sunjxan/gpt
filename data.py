@@ -70,7 +70,7 @@ def collate_batch(batch, vocab, max_len=512):
 
     for sent in batch:
         # 处理数据（添加特殊标记）
-        tokens = ['<sos>'] + chinese_tokenizer(sent) + ['<eos>'] 
+        tokens = chinese_tokenizer(sent) + ['<eos>'] 
         tokens = [vocab.get(t, vocab['<unk>']) for t in tokens[:max_len]]
         data.append(torch.LongTensor(tokens))
     

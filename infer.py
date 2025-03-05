@@ -24,7 +24,7 @@ def greedy_decode(model, sentence, tokenizer, vocab, max_len=50, device='cpu'):
     input_ids = process_data(sentence, tokenizer, vocab, device=device)
     end_token = vocab['<eos>']
 
-    for _ in range(max_len - 1):
+    for _ in range(max_len):
         probs = get_probs(model, input_ids, vocab)
         next_token = torch.argmax(probs, dim=-1, keepdim=True)
         input_ids = torch.cat([input_ids, next_token], dim=-1)
@@ -49,7 +49,7 @@ def beam_search_decode(model, sentence, tokenizer, vocab,
     # 存储完整序列
     completed = []
     
-    for _ in range(max_len - 1):
+    for _ in range(max_len):
         candidates = []
         
         # 遍历当前所有候选
@@ -60,7 +60,7 @@ def beam_search_decode(model, sentence, tokenizer, vocab,
                 continue
                 
             # 获取下一个token的概率分布
-            probs = get_probs(model, input_ids, vocab)
+            probs = get_probs(model, seq, vocab)
             top_probs, top_indices = torch.topk(probs, beam_width, dim=-1)
             
             for i in range(beam_width):
