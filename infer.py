@@ -77,12 +77,12 @@ if __name__ == '__main__':
     
     # 技术文档生成（高确定性）
     predictions = sampling_decode(model, sentence, chinese_tokenizer, vocab, max_len=50, temperature=0.7, top_k=1, device=device)
-    print('output(高确定性):', decode_sequence(predictions, vocab))
+    print('sampling decode(高确定性):', decode_sequence(predictions, vocab))
     
     # 创意写作（高多样性）
     predictions = sampling_decode(model, sentence, chinese_tokenizer, vocab, max_len=50, temperature=1.2, top_k=3, device=device)
-    print('output(高多样性):', decode_sequence(predictions, vocab))
+    print('sampling decode(高多样性):', decode_sequence(predictions, vocab))
     
     # 平衡模式
     predictions = sampling_decode(model, sentence, chinese_tokenizer, vocab, max_len=50, temperature=0.9, top_k=2, device=device)
-    print('output(平衡模式):', decode_sequence(predictions, vocab))
+    print('sampling decode(平衡模式):', decode_sequence(predictions, vocab))
