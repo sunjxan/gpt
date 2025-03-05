@@ -66,7 +66,7 @@ class Decoder(nn.Module):
             for _ in range(num_layers)
         ])
         
-        self.norm = nn.LayerNorm(d_model)  # 最终归一化层
+        self.norm = nn.LayerNorm(d_model)  # 最终归一化层（SublayerConnection选用Post-LN 结构时删除）
     
     def forward(self, x, mask=None):
         """
