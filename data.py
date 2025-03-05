@@ -56,10 +56,10 @@ class TranslationDataset(Dataset):
     def __init__(self, sentences):
         super().__init__()
         self.sentences = sentences
-
+    
     def __len__(self):
         return len(self.sentences)
-
+    
     def __getitem__(self, index):
         if index >= 0 and index < self.__len__():
             return self.sentences[index]
@@ -67,7 +67,7 @@ class TranslationDataset(Dataset):
 
 def collate_batch(batch, vocab, max_len=512):
     data = []
-
+    
     for sent in batch:
         # 处理数据（添加特殊标记）
         tokens = chinese_tokenizer(sent) + ['<eos>'] 

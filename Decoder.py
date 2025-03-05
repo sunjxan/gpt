@@ -60,12 +60,12 @@ class Decoder(nn.Module):
             dropout (float): Dropout概率，默认为0.1。
         """
         super().__init__()
-
+        
         self.layers = nn.ModuleList([
             DecoderLayer(d_model, num_heads, d_ff, dropout)
             for _ in range(num_layers)
         ])
-
+        
         self.norm = nn.LayerNorm(d_model)  # 最终归一化层
     
     def forward(self, x, mask=None):
@@ -81,7 +81,7 @@ class Decoder(nn.Module):
         # 逐层传递输入
         for layer in self.layers:
             x = layer(x, mask)
-
+        
         x = self.norm(x)  # 最终归一化
-
+        
         return x

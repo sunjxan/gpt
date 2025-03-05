@@ -18,6 +18,7 @@ class GPT(nn.Module):
             dropout (float): Dropout 概率
         """
         super().__init__()
+        self.max_seq_len = max_seq_len
         
         # 1. 词嵌入层
         self.embed = nn.Embedding(vocab_size, d_model)
@@ -30,10 +31,10 @@ class GPT(nn.Module):
         
         # 4. 最终线性层
         self.generator = nn.Linear(d_model, vocab_size, bias=False)
-
+        
         # 权重绑定：输入嵌入和输出层共享权重
         self.embed.weight = self.generator.weight
-
+    
     def forward(self, input_ids, mask=None):
         """
         前向传播
@@ -45,15 +46,15 @@ class GPT(nn.Module):
         """
         # 1. 词嵌入
         emb = self.embed(input_ids)  # (batch_size, seq_len, d_model)
-
+        
         # 2. 位置编码
         seq_len = input_ids.size(-1)
         position = torch.arange(0, seq_len)
         memory = emb + self.positional_encoding(position)  # (batch_size, seq_len, d_model)
-
+        
         # 3. 解码器处理
         decoder_output = self.decoder(memory, mask)  # (batch_size, seq_len, d_model)
-
+        
         # 4. 输出层映射到词表
         output = self.generator(decoder_output)  # (batch_size, seq_len, vocab_size)
         
@@ -71,17 +72,17 @@ class GPT(nn.Module):
             elif 'bias' in name:  # 偏置初始化为零
                 nn.init.zeros_(param)
             # LayerNorm参数保持默认初始化（gamma=1, beta=0）
-
+    
     @staticmethod
     def generate_padding_mask(seq, pad_idx=0):
         """生成填充掩码（pad位置为False）"""
         return (seq != pad_idx).unsqueeze(-2)  # (batch_size, 1, seq_len)
-
+    
     @staticmethod
     def generate_causal_mask(seq_len):
         """生成因果掩码（下三角为True）"""
         return torch.tril(torch.ones(seq_len, seq_len)) == 1  # (seq_len, seq_len)
-
+    
     @staticmethod
     def generate_mask(seq, pad_idx=0):
         '''结合填充掩码和因果掩码得到目标序列掩码'''
@@ -89,13 +90,13 @@ class GPT(nn.Module):
 
 '''
     计算模型参数量
-
+    
     1. 嵌入层
     vocab_size × d_model
-
+    
     2. 位置编码
     max_seq_len × d_model
-
+    
     3. 解码器（Decoder）
     每层包含：
         1个多头注意力（相当于4个线性层，无偏置项）：4 × (d_model × d_model)
@@ -104,7 +105,7 @@ class GPT(nn.Module):
     最终归一化层：d_model + d_model
     总参数量：
         num_decoder_layers × [4d² + 2d·d_ff + d_ff + 4d] + 2d
-
+    
     4. 生成器（Generator）
     weight共享嵌入层权重，无bias
 '''
