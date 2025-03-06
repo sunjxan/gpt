@@ -1,56 +1,48 @@
 import torch
-import jieba
+import re
+import sentencepiece as spm
 
-from collections import Counter
+from datasets import load_dataset
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
-# 原始数据
-sentences = [
-    '我爱学习人工智能',
-    '深度学习改变世界',
-    '自然语言处理很强大',
-    '神经网络非常复杂'
-]
+dataset = load_dataset('Delius/ChineseWebNovel', split='train')
 
-def filter_examples(example):   
-    return (
-        1 < len(example) < 150 and   # 控制中文长度
-        not any(c in example for c in ['�', '�'])  # 过滤非法字符
-    )
+def clean_text(text):
+    # 去除特殊字符
+    text = re.sub(r'[�◆★【】▲▼■●]', '', text)
+    # 合并连续空格
+    text = re.sub(r'\s+', ' ', text)
+    # 过滤短文本
+    if len(text) < 20:
+        return None
+    return text.strip()
 
-# 数据清洗
-sentences = list(filter(filter_examples, sentences))
+corpus_file = 'cleaned_corpus.txt'
+model_prefix = 'spm_chinese'
 
-# 定义特殊标记
-SPECIAL_TOKENS = ['<pad>', '<sos>', '<eos>', '<unk>']
+# 应用清洗并保存
+with open(corpus_file, "w", encoding="utf-8") as f:
+    for example in dataset:
+        cleaned = clean_text(example["Response"])
+        if cleaned:
+            f.write(cleaned + "\n")
 
-# 中文处理函数
-def chinese_tokenizer(text):
-    """中文按字符分割"""
-    return list(jieba.cut(text.strip()))
+spm.SentencePieceTrainer.train(
+    input=corpus_file,
+    model_prefix=model_prefix,
+    vocab_size=32000,
+    character_coverage=0.9995,
+    pad_id=0,
+    unk_id=1,
+    bos_id=2,
+    eos_id=3,
+    model_type='unigram',
+    user_defined_symbols=['<sep>', '<cls>']  # 自定义特殊符号
+)
 
-# 构建词汇表
-def build_vocab(sentences, tokenizer):
-    """构建词汇表"""
-    counter = Counter()
-    for sent in sentences:
-        counter.update(tokenizer(sent))
-    vocab = {token: i+len(SPECIAL_TOKENS) for i, token in enumerate(sorted(counter))}
-    # 添加特殊标记
-    for i, token in enumerate(SPECIAL_TOKENS):
-        vocab[token] = i
-    return vocab
-
-def create_vocab():
-    # 生成词汇表
-    return build_vocab(sentences, chinese_tokenizer)
-
-# 预测结果解码
-def decode_sequence(ids, vocab):
-    idx2token = {v: k for k, v in vocab.items()}
-    return ''.join([idx2token.get(i, '<unk>')
-                     for i in ids if i not in [vocab['<pad>'], vocab['<sos>'], vocab['<eos>']]])
+# 加载分词器
+sp = spm.SentencePieceProcessor(f"{model_prefix}.model")
 
 class TranslationDataset(Dataset):
     def __init__(self, sentences):
