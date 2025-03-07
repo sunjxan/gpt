@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from torch.utils.tensorboard import SummaryWriter
 
-from data import create_vocab, create_dataloader
+from data import create_tokenizer, create_dataloader
 from GPT import GPT
 
 class Trainer:
@@ -206,20 +206,20 @@ class Trainer:
 # 示例用法
 if __name__ == '__main__':
     # 初始化模型和数据加载器
-    vocab = create_vocab()
+    tokenizer = create_tokenizer()
     
     # 创建模型
-    model = GPT(len(vocab))
+    model = GPT(tokenizer.vocab_size())
     
     # 初始化参数
     model.init_parameters()
     
     # 定义损失函数和优化器
-    criterion = nn.CrossEntropyLoss(ignore_index=vocab['<pad>'])  # 忽略padding位置的损失
+    criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_id())  # 忽略padding位置的损失
     optimizer = torch.optim.Adam(model.parameters(), lr=2.5e-4)
     
-    train_loader = create_dataloader(vocab, batch_size=2, shuffle=True, drop_last=True)
-    val_loader = create_dataloader(vocab, batch_size=2)
+    train_loader = create_dataloader(tokenizer, batch_size=32, max_len=model.max_seq_len, shuffle=True, drop_last=True)
+    val_loader = create_dataloader(tokenizer, batch_size=32, max_len=model.max_seq_len)
     
     # 配置参数
     config = {
@@ -230,7 +230,7 @@ if __name__ == '__main__':
         'checkpoint': './checkpoints/checkpoint_best.pth',  # 可以指定预训练权重路径
         'print_interval_steps': 10,
         'save_interval_epochs': 5,
-        'pad_idx': vocab['<pad>']
+        'pad_idx': tokenizer.pad_id()
     }
     
     # 创建训练器

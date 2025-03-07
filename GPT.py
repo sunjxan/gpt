@@ -83,10 +83,10 @@ class GPT(nn.Module):
         """生成因果掩码（下三角为True）"""
         return torch.tril(torch.ones(seq_len, seq_len)) == 1  # (seq_len, seq_len)
     
-    @staticmethod
-    def generate_mask(seq, pad_idx=0):
+    @classmethod
+    def generate_mask(cls, seq, pad_idx=0):
         '''结合填充掩码和因果掩码得到目标序列掩码'''
-        return GPT.generate_padding_mask(seq, pad_idx) & GPT.generate_causal_mask(seq.size(-1)).to(seq.device)   # (batch_size, seq_len, seq_len)
+        return cls.generate_padding_mask(seq, pad_idx) & cls.generate_causal_mask(seq.size(-1)).to(seq.device)   # (batch_size, seq_len, seq_len)
 
 '''
     计算模型参数量
