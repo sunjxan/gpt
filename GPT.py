@@ -49,7 +49,7 @@ class GPT(nn.Module):
         
         # 2. 位置编码
         seq_len = input_ids.size(-1)
-        position = torch.arange(0, seq_len)
+        position = torch.arange(0, seq_len).to(input_ids.device)
         memory = emb + self.positional_encoding(position)  # (batch_size, seq_len, d_model)
         
         # 3. 解码器处理
