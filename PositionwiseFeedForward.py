@@ -15,7 +15,7 @@ class PositionwiseFeedForward(nn.Module):
         # 第一个线性层：将输入从d_model扩展到d_ff维度
         self.linear1 = nn.Linear(d_model, d_ff)
         # 第二个线性层：将中间层从d_ff恢复回d_model维度
-        self.linear2 = nn.Linear(d_ff, d_model, bias=False)
+        self.linear2 = nn.Linear(d_ff, d_model)
         # 激活函数
         self.activation = nn.GELU()
         # Dropout层，用于防止过拟合

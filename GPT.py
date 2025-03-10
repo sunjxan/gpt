@@ -44,11 +44,13 @@ class GPT(nn.Module):
         Returns:
             output (Tensor): 输出概率分布 (batch_size, seq_len, vocab_size)
         """
+        seq_len = input_ids.size(-1)
+        assert seq_len <= self.max_seq_len, f"序列长度{seq_len}超过最大限制{self.max_seq_len}"
+        
         # 1. 词嵌入
         emb = self.embed(input_ids)  # (batch_size, seq_len, d_model)
         
         # 2. 位置编码
-        seq_len = input_ids.size(-1)
         position = torch.arange(0, seq_len).to(input_ids.device)
         memory = emb + self.positional_encoding(position)  # (batch_size, seq_len, d_model)
         
@@ -100,11 +102,11 @@ class GPT(nn.Module):
     3. 解码器（Decoder）
     每层包含：
         1个多头注意力（相当于4个线性层，无偏置项）：4 × (d_model × d_model)
-        前馈网络（2个线性层）：2 × d_model × d_ff + d_ff
+        前馈网络（2个线性层）：2 × d_model × d_ff + d_ff + d_model
         2个归一化层：2 × (d_model + d_model)
     最终归一化层：d_model + d_model
     总参数量：
-        num_decoder_layers × [4d² + 2d·d_ff + d_ff + 4d] + 2d
+        num_decoder_layers × [4d² + 2d·d_ff + d_ff + 5d] + 2d
     
     4. 生成器（Generator）
     weight共享嵌入层权重，无bias
