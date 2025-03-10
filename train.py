@@ -9,7 +9,7 @@ from data import create_tokenizer, create_dataloader
 from GPT import GPT
 
 class Trainer:
-    def __init__(self, model, train_loader, val_loader, criterion, optimizer, config=None):
+    def __init__(self, model, train_loader, val_loader, criterion, optimizer, scheduler=None, config=None):
         """
         初始化训练器
         Args:
@@ -18,6 +18,7 @@ class Trainer:
             val_loader: 验证数据加载器
             criterion: 损失函数
             optimizer: 优化器
+            scheduler: 学习率调度器 (可选)
             config: 配置字典，包含以下参数：
                 device: 使用的设备 (cuda/cpu)
                 epochs: 训练轮数
@@ -30,6 +31,7 @@ class Trainer:
         self.val_loader = val_loader
         self.criterion = criterion
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.config = config
         
         # 初始化设置
@@ -145,7 +147,7 @@ class Trainer:
                     input_ids=input_ids[:, :-1],  # 解码器输入去尾
                     mask=mask[:, :-1, :-1]
                 )
-                
+            
             # 计算损失
             loss = self.criterion(
                 output.contiguous().view(-1, output.size(-1)),
@@ -175,6 +177,13 @@ class Trainer:
             train_loss, train_time = self.train_epoch(epoch)
             val_loss, val_time = self.validate(epoch)
             
+            # 更新学习率
+            if self.scheduler is not None:
+                if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                    self.scheduler.step(val_loss)
+                else:
+                    self.scheduler.step()
+            
             # 打印日志
             print(f'\nEpoch: {epoch}/{self.epochs} Train Loss: {train_loss:.4f} Time: {train_time:.3f}s | '
                   f'Val Loss: {val_loss:.4f} Time: {val_time:.3f}s\n')
@@ -191,6 +200,7 @@ class Trainer:
             'epoch': self.epochs,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict() if self.scheduler else None,
             'best_val_loss': self.best_val_loss
         }
         torch.save(checkpoint, os.path.join(self.save_dir, filename))
@@ -200,6 +210,8 @@ class Trainer:
         checkpoint = torch.load(checkpoint_path, weights_only=True)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if self.scheduler and checkpoint['scheduler_state_dict']:
+            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         self.best_val_loss = checkpoint['best_val_loss']
         print(f'Loaded checkpoint from {checkpoint_path}')
 

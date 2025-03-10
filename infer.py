@@ -38,8 +38,7 @@ def greedy_decode(model, text, tokenizer, max_len=50, device='cpu'):
     
     return input_ids[0].cpu().tolist()
 
-def sampling_decode(model, text, tokenizer, max_len=50,
-                    temperature=1.0, top_k=1, device='cpu'):
+def sampling_decode(model, text, tokenizer, max_len=50, temperature=1.0, top_k=1, device='cpu'):
     model.eval()
     
     input_ids = process_data(model, text, tokenizer, device=device)
@@ -75,13 +74,13 @@ if __name__ == '__main__':
     print('\ngreedy decode:', tokenizer.detokenize(predictions))
     
     # 技术文档生成（高确定性）
-    predictions = sampling_decode(model, text, tokenizer, max_len=50, temperature=0.7, top_k=1, device=device)
+    predictions = sampling_decode(model, text, tokenizer, max_len=50, temperature=0.7, top_k=3, device=device)
     print('\nsampling decode(高确定性):', tokenizer.detokenize(predictions))
     
     # 创意写作（高多样性）
-    predictions = sampling_decode(model, text, tokenizer, max_len=50, temperature=1.2, top_k=3, device=device)
+    predictions = sampling_decode(model, text, tokenizer, max_len=50, temperature=1.2, top_k=8, device=device)
     print('\nsampling decode(高多样性):', tokenizer.detokenize(predictions))
     
     # 平衡模式
-    predictions = sampling_decode(model, text, tokenizer, max_len=50, temperature=0.9, top_k=2, device=device)
+    predictions = sampling_decode(model, text, tokenizer, max_len=50, temperature=0.9, top_k=5, device=device)
     print('\nsampling decode(平衡模式):', tokenizer.detokenize(predictions))
