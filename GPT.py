@@ -24,7 +24,7 @@ class GPT(nn.Module):
         self.embed = nn.Embedding(vocab_size, d_model)
         
         # 2. 位置编码
-        self.positional_encoding = nn.Embedding(max_seq_len, d_model)
+        self.position_emb = nn.Parameter(torch.randn(max_seq_len, d_model))
         
         # 3. 解码器
         self.decoder = Decoder(num_layers, d_model, num_heads, d_ff, dropout)
@@ -51,8 +51,8 @@ class GPT(nn.Module):
         emb = self.embed(input_ids)  # (batch_size, seq_len, d_model)
         
         # 2. 位置编码
-        position = torch.arange(0, seq_len).to(input_ids.device)
-        memory = emb + self.positional_encoding(position)  # (batch_size, seq_len, d_model)
+        position_emb = self.position_emb[:seq_len]
+        memory = emb + position_emb  # (batch_size, seq_len, d_model)
         
         # 3. 解码器处理
         decoder_output = self.decoder(memory, mask)  # (batch_size, seq_len, d_model)
