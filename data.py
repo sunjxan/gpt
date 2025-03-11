@@ -43,7 +43,7 @@ if not os.path.exists(f"{model_prefix}.model"):
         bos_id=2,
         eos_id=3,
         model_type='unigram',
-        user_defined_symbols=['<sep>', '<cls>']  # 自定义特殊符号
+        user_defined_symbols=['<cls>', '<sep>']  # 自定义特殊符号
     )
 
 def create_tokenizer():
