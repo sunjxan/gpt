@@ -228,7 +228,20 @@ if __name__ == '__main__':
     
     # 定义损失函数和优化器
     criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_id())  # 忽略padding位置的损失
-    optimizer = torch.optim.Adam(model.parameters(), lr=2.5e-4)
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=1e-4,
+        betas=(0.9, 0.98),
+        eps=1e-9,
+        weight_decay=0.01
+    )
+    
+    # 定义学习率调度器
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer,
+        step_size=1,
+        gamma=0.95
+    )
     
     train_loader = create_dataloader(tokenizer, batch_size=32, max_len=model.max_seq_len, shuffle=True, drop_last=True)
     val_loader = create_dataloader(tokenizer, batch_size=32, max_len=model.max_seq_len)
@@ -252,6 +265,7 @@ if __name__ == '__main__':
         val_loader=val_loader,
         criterion=criterion,
         optimizer=optimizer,
+        scheduler=scheduler,
         config=config
     )
     
