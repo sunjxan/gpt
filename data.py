@@ -54,7 +54,7 @@ class TextDataset(Dataset):
         self.data = []
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
-                tokens = tokenizer.encode(line.strip()) + [tokenizer.eos_id()]
+                tokens = tokenizer.tokenize(line.strip()) + [tokenizer.eos_id()]
                 for i in range(0, len(tokens), max_len):
                     text = tokens[i:i+max_len]
                     if len(text) > 1:
