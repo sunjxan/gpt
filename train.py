@@ -80,7 +80,7 @@ class Trainer:
             input_ids = input_ids.to(self.device)
             
             # 生成掩码
-            mask = model.generate_mask(input_ids, self.config['pad_idx'])
+            mask = model.generate_mask(input_ids, self.config['pad_id'])
             
             # 梯度清零
             self.optimizer.zero_grad()
@@ -139,7 +139,7 @@ class Trainer:
             input_ids = input_ids.to(self.device)
             
             # 生成掩码
-            mask = model.generate_mask(input_ids, self.config['pad_idx'])
+            mask = model.generate_mask(input_ids, self.config['pad_id'])
             
             # 前向传播
             with torch.no_grad():
@@ -242,7 +242,7 @@ if __name__ == '__main__':
         'checkpoint': './checkpoints/checkpoint_best.pth',  # 可以指定预训练权重路径
         'print_interval_steps': 10,
         'save_interval_epochs': 5,
-        'pad_idx': tokenizer.pad_id()
+        'pad_id': tokenizer.pad_id()
     }
     
     # 创建训练器
