@@ -14,7 +14,10 @@ def get_probs(model, input_ids, tokenizer, temperature=1.0, top_k=None):
     input_ids = input_ids[:, -model.max_seq_len:]
     mask = model.generate_mask(input_ids, tokenizer.pad_id())
     with torch.no_grad():
-        output = model(input_ids, mask)
+        output = model(
+            input_ids=input_ids,
+            mask=mask
+        )
     # 应用温度缩放
     output = output[:, -1] / temperature
     # Top-k 过滤
@@ -69,7 +72,7 @@ if __name__ == '__main__':
     
     while True:
         try:
-            text = input('请输入中文句子：').strip()
+            text = input('请输入中文句子: ').strip()
         except:
             print()
             exit()
