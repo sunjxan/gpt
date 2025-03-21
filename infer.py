@@ -57,6 +57,9 @@ def sampling_decode(model, text, tokenizer, max_len=50, temperature=1.0, top_k=1
     return input_ids[0].cpu().tolist()
 
 if __name__ == '__main__':
+    # 设置随机种子（保证可重复性）
+    torch.manual_seed(0)
+    
     tokenizer = create_tokenizer()
     
     # 创建模型
