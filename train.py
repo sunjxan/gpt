@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 
 from data import create_tokenizer, create_dataloader
-from GPT import GPT
+from Transformer import Transformer
 
 class Trainer:
     def __init__(self, model, train_loader, val_loader, criterion, calc_accuracy, optimizer, scheduler=None, config=None):
@@ -233,7 +233,7 @@ if __name__ == '__main__':
     tokenizer = create_tokenizer()
     
     # 创建模型
-    model = GPT(tokenizer.vocab_size())
+    model = Transformer(tokenizer.vocab_size())
     
     # 初始化参数
     model.init_parameters()

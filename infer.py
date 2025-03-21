@@ -2,7 +2,7 @@ import os
 import torch
 
 from data import create_tokenizer
-from GPT import GPT
+from Transformer import Transformer
 
 def process_data(model, text, tokenizer, device='cpu'):
     """处理输入数据并生成编码器输出"""
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     tokenizer = create_tokenizer()
     
     # 创建模型
-    model = GPT(tokenizer.vocab_size())
+    model = Transformer(tokenizer.vocab_size())
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
