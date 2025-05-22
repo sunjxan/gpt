@@ -12,7 +12,7 @@ def process_data(model, text, tokenizer, device='cpu'):
 def get_probs(model, input_ids, tokenizer, temperature=1.0, top_k=None):
     """获取下一个token的概率分布"""
     input_ids = input_ids[:, -model.max_seq_len:]
-    mask = model.generate_mask(input_ids, tokenizer.pad_id())
+    mask = model.generate_mixed_mask(input_ids, tokenizer.pad_id())
     with torch.no_grad():
         output = model(
             input_ids=input_ids,

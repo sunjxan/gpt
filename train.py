@@ -82,7 +82,7 @@ class Trainer:
             input_ids = input_ids.to(self.device)
             
             # 生成掩码
-            mask = model.generate_mask(input_ids, self.config['pad_id'])
+            mask = model.generate_mixed_mask(input_ids, self.config['pad_id'])
             
             # 梯度清零
             self.optimizer.zero_grad()
@@ -142,7 +142,7 @@ class Trainer:
             input_ids = input_ids.to(self.device)
             
             # 生成掩码
-            mask = model.generate_mask(input_ids, self.config['pad_id'])
+            mask = model.generate_mixed_mask(input_ids, self.config['pad_id'])
             
             # 前向传播
             with torch.no_grad():
